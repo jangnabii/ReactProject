@@ -1,13 +1,14 @@
 // src/types/index.ts
 
 export interface Book {
-  bookId: string;
+  id: string;
   title: string;
-  author: string;
-  coverImageUrl: string;
-  isbn?: string;
+  author?: string;
   publisher?: string;
-  addedAt: string;
+  pubYear?: string;
+  isbn?: string;
+  coverImage?: string | null;
+  description?: string;
 }
 
 export interface BookLog {

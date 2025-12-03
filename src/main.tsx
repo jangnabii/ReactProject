@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import ModeSelection from './pages/ModeSelection';
 import Home from './pages/Home';
 import Bookshelf from './pages/Bookshelf';
-import BookLog from './pages/BookLog'; // Import the BookLog component
+import BookLog from './pages/BookLog'; // Renaming back to BookLog
 import Chat from './pages/Chat';
 
 const router = createBrowserRouter([
@@ -32,7 +32,12 @@ const router = createBrowserRouter([
         element: <Bookshelf />,
       },
       {
-        // Dynamic route for individual book logs
+        // Route for the recommendation/search page
+        path: 'book-log',
+        element: <BookLog />,
+      },
+      {
+        // Route for individual book logs (the restored feature)
         path: 'book-log/:bookId',
         element: <BookLog />,
       },
