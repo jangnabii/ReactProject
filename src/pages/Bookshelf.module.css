@@ -1,13 +1,11 @@
 /* src/pages/Bookshelf.module.css */
 .container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
   width: 100%;
-  max-width: 1200px; /* Wider for bookshelf */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background-color: #f0f8ff;
+  background-color: #f9f9f9;
+  min-height: 100vh;
 }
 
 .title {
@@ -15,40 +13,89 @@
   text-align: center;
   font-size: 2.5rem;
   color: #333;
+  font-weight: 600;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  /* Adjust minmax for a better box-like feel, e.g., 180px */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 2rem;
+}
+
+.bookCardWrapper {
+  position: relative; /* For positioning the remove button */
 }
 
 .bookCard {
   text-decoration: none;
   color: inherit;
-  background-color: transparent;
-  border: none;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   cursor: pointer;
   text-align: center;
-  transition: transform 0.2s ease-in-out;
+  transition: all 0.3s ease;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 250px; /* Give a fixed height for uniformity */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .bookCard:hover {
-  transform: scale(1.05);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-.coverImage {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+.coverImagePlaceholder {
+  font-size: 4rem; /* Make the emoji bigger */
+  line-height: 1;
   margin-bottom: 1rem;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bookTitle {
-  font-weight: bold;
-  white-space: nowrap;
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: initial; /* Allow wrapping */
   overflow: hidden;
   text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limit to 2 lines */
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+
+.removeButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.bookCardWrapper:hover .removeButton {
+  opacity: 1;
+}
+
+.removeButton:hover {
+  background: rgba(0,0,0,0.8);
 }

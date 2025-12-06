@@ -76,13 +76,53 @@
 }
 .chatButton:hover { background-color: #0056b3; }
 
-.calendarCard h2 { text-align: center; margin-top: 0; margin-bottom: 1rem; }
+.calendarCard h2, .calendarCard h3 { text-align: center; margin-top: 0; margin-bottom: 1rem; }
+
+.calendarNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendarTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+.navButton:hover {
+  color: #007bff;
+}
+
 .calendarGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.calendarHeader { text-align: center; font-weight: bold; }
-.calendarDay { border: 1px solid #eee; padding: 0.5rem; text-align: center; height: 40px; }
-.today { border: 2px solid #007bff; }
-.attended { background-color: #d4edda; }
+.calendarHeader { text-align: center; font-weight: bold; color: #555; padding-bottom: 0.5rem; }
+.calendarDay { 
+  border: 1px solid #f0f0f0; 
+  padding: 0.5rem; 
+  text-align: center; 
+  height: 50px;
+  position: relative; /* For positioning the marker */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.today { border: 2px solid #007bff; font-weight: bold; }
 .emptyDay { visibility: hidden; }
+
+.attendanceMarker {
+  font-size: 0.9rem; /* Increased size */
+  margin-left: 4px; /* Space between number and emoji */
+}
+
 
 .libraryHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .libraryHeader h2 { margin: 0; }

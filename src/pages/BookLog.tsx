@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useOutletContext } from 'react-router-dom';
-import type { Book } from '../types';
-// Note: BookLogType and mock APIs are commented out as they are not used in the final version
-// import { BookLog as BookLogType } from '../types';
-// import { getBookLog, saveUserReview } from '../api/mock';
+import type { Book, BookLog } from '../types';
 import styles from './BookLog.module.css';
-import HomeBackButton from '../components/HomeBackButton';
+import HomeBackButton from '../components/HomeBackButton.tsx';
 
 // Component for the book search/recommendation feature
 function BookRecommendation() {
@@ -23,7 +20,8 @@ function BookRecommendation() {
     setLoading(true);
     setFeedback('');
     try {
-      const response = await fetch(`/api/books/recommend?query=${encodeURIComponent(query)}`);
+      // For manual search, we can use a generic mode or a specific one
+      const response = await fetch(`/api/books/recommend?query=${encodeURIComponent(query)}&mode=adult`);
       if (!response.ok) {
         throw new Error('서버에서 오류가 발생했습니다.');
       }
@@ -54,8 +52,27 @@ function BookRecommendation() {
         return;
     }
 
+    // 1. Add book to bookshelf
     const updatedBooks = [...storedBooks, book];
     localStorage.setItem(bookshelfKey, JSON.stringify(updatedBooks));
+    
+    // 2. Add a corresponding default BookLog
+    const bookLogKey = `booklogs_${currentUser}`;
+    const storedBookLogs: BookLog[] = JSON.parse(localStorage.getItem(bookLogKey) || '[]');
+    const newLog: BookLog = {
+      id: book.id,
+      userId: currentUser,
+      aiSummary: {
+        emotion: '직접 추가',
+        userConcern: 'N/A',
+        recommendationReason: '도서 검색을 통해 직접 추가한 책입니다.',
+      },
+      userReview: '',
+      recommendedDate: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+    };
+    localStorage.setItem(bookLogKey, JSON.stringify([...storedBookLogs, newLog]));
+
     setFeedback(`'${book.title}'을(를) 서재에 추가했습니다.`);
     setTimeout(() => setFeedback(''), 3000);
   };
@@ -100,60 +117,126 @@ function BookRecommendation() {
 }
 
 
-// Component for displaying the log of a single book (Restored)
+// Component for displaying the log of a single book (Restored and Refactored)
 function BookLogDetail() {
   const { bookId } = useParams<{ bookId: string }>();
   const { currentUser } = useOutletContext<{ currentUser: string | null }>();
   const [book, setBook] = useState<Book | null>(null);
+  const [bookLog, setBookLog] = useState<BookLog | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (currentUser && bookId) {
+      // Fetch Book data from bookshelf
       const bookshelfKey = `bookshelf_${currentUser}`;
       const storedBooks: Book[] = JSON.parse(localStorage.getItem(bookshelfKey) || '[]');
       const foundBook = storedBooks.find(b => b.id === bookId);
+      setBook(foundBook || null);
+
+      // Fetch BookLog data
+      const bookLogKey = `booklogs_${currentUser}`;
+      const storedBookLogs: BookLog[] = JSON.parse(localStorage.getItem(bookLogKey) || '[]');
+      const foundBookLog = storedBookLogs.find(log => log.id === bookId);
+      setBookLog(foundBookLog || null);
       
-      if (foundBook) {
-        setBook(foundBook);
-      } else {
-        setError('서재에서 책을 찾을 수 없습니다.');
-      }
+      // Initialize textarea with existing review or empty string
+      setReviewText(foundBookLog?.userReview || '');
     }
     setLoading(false);
   }, [currentUser, bookId]);
 
+  const handleSaveReview = () => {
+    if (!currentUser || !book) return;
+
+    const bookLogKey = `booklogs_${currentUser}`;
+    const storedBookLogs: BookLog[] = JSON.parse(localStorage.getItem(bookLogKey) || '[]');
+    const logExists = storedBookLogs.some(log => log.id === book.id);
+    
+    let updatedLogs: BookLog[];
+
+    if (logExists) {
+      // Update existing log
+      updatedLogs = storedBookLogs.map(log => {
+        if (log.id === book.id) {
+          return { ...log, userReview: reviewText, lastUpdated: new Date().toISOString() };
+        }
+        return log;
+      });
+    } else {
+      // Create new log for a book that didn't have one
+      const newLog: BookLog = {
+        id: book.id,
+        userId: currentUser,
+        aiSummary: { // AI summary is not available for old/manual books
+          emotion: 'N/A',
+          userConcern: 'N/A',
+          recommendationReason: 'AI 추천으로 추가된 책이 아닙니다.',
+        },
+        userReview: reviewText,
+        recommendedDate: new Date().toISOString(), // Or use a book's added date if available
+        lastUpdated: new Date().toISOString(),
+      };
+      updatedLogs = [...storedBookLogs, newLog];
+    }
+
+    localStorage.setItem(bookLogKey, JSON.stringify(updatedLogs));
+    const updatedLog = updatedLogs.find(log => log.id === book.id);
+    setBookLog(updatedLog || null); // Update state to reflect change
+
+    setFeedback('독서 소감이 저장되었습니다!');
+    setTimeout(() => setFeedback(''), 3000);
+  };
 
   if (loading) {
-    return <div className={styles.loading}>로딩 중...</div>;
+    return <div className={styles.container}><p>독서 기록을 불러오는 중...</p></div>;
   }
 
-  if (error) {
-    return <div className={styles.error}>{error}</div>;
-  }
-
+  // If the book itself is not found in the bookshelf, it's an error.
   if (!book) {
-    return <div className={styles.error}>독서 기록을 표시할 수 없습니다.</div>;
+    return <div className={styles.container}><p>서재에서 책을 찾을 수 없습니다.</p><Link to="/bookshelf" className={styles.backLink}>← 서재로 돌아가기</Link></div>;
   }
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.bookInfo}>
-          <h1>{book.title}</h1>
-          <p>저자: {book.author}</p>
-          <p>출판사: {book.publisher}</p>
-          <p>출판년도: {book.pubYear}</p>
-          <Link to="/bookshelf" className={styles.backLink}>← 서재로 돌아가기</Link>
+          <div className={styles.coverImagePlaceholder}>📚</div>
+          <div>
+            <h1>{book.title}</h1>
+            <p><strong>저자:</strong> {book.author}</p>
+            {bookLog && <p><strong>추천 날짜:</strong> {new Date(bookLog.recommendedDate).toLocaleDateString()}</p>}
+          </div>
         </div>
+        <Link to="/bookshelf" className={styles.backLink}>← 서재로 돌아가기</Link>
       </header>
-
+      
       <main className={styles.content}>
-        {/* The AI summary and user review sections are removed as per the shift in functionality */}
+        <section className={styles.aiSummary}>
+          <h2>AI 감정 요약</h2>
+          {bookLog ? (
+            <>
+              <p><strong>주요 감정:</strong> {bookLog.aiSummary.emotion}</p>
+              <p><strong>사용자의 고민:</strong> "{bookLog.aiSummary.userConcern}"</p>
+              <p><strong>AI의 추천 메시지:</strong> "{bookLog.aiSummary.recommendationReason}"</p>
+            </>
+          ) : (
+            <p>이 책에 대한 AI 감정 요약이 없습니다. (AI 추천을 통해 추가된 책이 아닐 수 있습니다.)</p>
+          )}
+        </section>
+
         <section className={styles.userReview}>
-          <h2>독서 기록 (기능 업데이트 필요)</h2>
-          <p>이 책에 대한 AI 요약 및 독서 기록 기능은 현재 구현에서 제외되었습니다.</p>
-          <p>추후 이 공간에 독서록을 작성하는 기능을 추가할 수 있습니다.</p>
+          <h2>나의 독서 소감</h2>
+          <textarea
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            placeholder="이 책을 읽고 어떤 생각이 들었나요? 자유롭게 감상을 남겨보세요."
+            className={styles.reviewTextarea}
+          />
+          <button onClick={handleSaveReview} className={styles.saveButton}>소감 저장하기</button>
+          {feedback && <p className={styles.feedbackMessage}>{feedback}</p>}
+          {bookLog && <p className={styles.timestamp}>최종 수정: {new Date(bookLog.lastUpdated).toLocaleString()}</p>}
         </section>
       </main>
     </div>

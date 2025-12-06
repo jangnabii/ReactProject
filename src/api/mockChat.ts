@@ -29,19 +29,25 @@ interface MockVoices {
 
 export const MOCK_VOICES: MockVoices = {
   child: [
-    { id: 'child-1', name: '피카츄 목소리' },
-    { id: 'child-2', name: '씩씩한 어린이 목소리' },
+    { id: 'child-1', name: '티니핑 목소리' },
+    { id: 'child-2', name: '뽀로로 목소리' },
+    { id: 'child-3', name: '핑크퐁 목소리' },
   ],
   teen: [
-    { id: 'teen-1', name: '아이돌 (남)' },
-    { id: 'teen-2', name: '하이틴 여주인공' },
+    { id: 'teen-1', name: '장원영 목소리' },
+    { id: 'teen-2', name: '원빈 목소리' },
+    { id: 'teen-3', name: '타잔 목소리' },
   ],
   adult: [
-    { id: 'adult-1', name: '차분한 아나운서' },
-    { id: 'adult-2', name: '다정한 선배' },
+    { id: 'adult-1', name: '박효신 목소리' },
+    { id: 'adult-2', name: '아이유 목소리' },
+    { id: 'adult-3', name: '이재훈 목소리' },
+    { id: 'adult-4', name: '나문희 목소리' },
   ],
   senior: [
-    { id: 'senior-1', name: '구수한 트로트 가수' },
-    { id: 'senior-2', name: '자상한 할머니' },
+    { id: 'senior-1', name: '나훈아 목소리' },
+    { id: 'senior-2', name: '임영웅 목소리' },
+    { id: 'senior-3', name: '이찬원 목소리' },
+    { id: 'senior-4', name: '장윤정 목소리' },
   ],
 };

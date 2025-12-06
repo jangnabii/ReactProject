@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import type { Book } from '../types';
 import styles from './Bookshelf.module.css';
-import HomeBackButton from '../components/HomeBackButton';
+import HomeBackButton from '../components/HomeBackButton.tsx';
 
 function Bookshelf() {
   const { currentUser } = useOutletContext<{ currentUser: string | null }>();

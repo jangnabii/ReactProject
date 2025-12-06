@@ -1,51 +1,49 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaBook } from 'react-icons/fa';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { FaBook, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import styles from './Home.module.css';
-
-// Mock data
-const PROFILE_IMAGE_BY_MODE: { [key: string]: string } = {
-  child: '/icons/profile_child.png',
-  teen: '/icons/profile_teen.png',
-  adult: '/icons/profile_adult.png',
-  senior: '/icons/profile_senior.png'
-};
-const RECENT_BOOKS = [
-  { id: 1, title: 'The Little Prince', cover: 'https://via.placeholder.com/150/FFC0CB/000000?Text=Book1' },
-  { id: 2, title: 'Demian', cover: 'https://via.placeholder.com/150/ADD8E6/000000?Text=Book2' },
-  { id: 3, title: 'The Alchemist', cover: 'https://via.placeholder.com/150/90EE90/000000?Text=Book3' },
-  { id: 4, title: 'Book 4', cover: 'https://via.placeholder.com/150/90EE90/000000?Text=Book4' },
-];
+import type { Book } from '../types';
 
 function Home() {
-  const [userName, setUserName] = useState('');
-  const [userMode, setUserMode] = useState('adult');
+  const { currentUser } = useOutletContext<{ currentUser: string | null }>();
   const [attendance, setAttendance] = useState<string[]>([]);
+  const [recentBooks, setRecentBooks] = useState<Book[]>([]);
+  const [displayDate, setDisplayDate] = useState(new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
-    const name = localStorage.getItem('userName') || '사용자';
-    const mode = localStorage.getItem('userMode') || 'adult';
-    const storedAttendance = JSON.parse(localStorage.getItem('attendance') || '[]');
+    if (!currentUser) return;
 
-    setUserName(name);
-    setUserMode(mode);
+    // --- Per-user Attendance Logic ---
+    const attendanceKey = `attendance_${currentUser}`;
+    const storedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '[]');
+    setAttendance(storedAttendance);
 
     const today = new Date().toISOString().split('T')[0];
     if (!storedAttendance.includes(today)) {
       const updatedAttendance = [...storedAttendance, today];
       setAttendance(updatedAttendance);
-      localStorage.setItem('attendance', JSON.stringify(updatedAttendance));
-    } else {
-      setAttendance(storedAttendance);
+      localStorage.setItem(attendanceKey, JSON.stringify(updatedAttendance));
     }
-  }, []);
+    
+    // --- Per-user Bookshelf Logic ---
+    const bookshelfKey = `bookshelf_${currentUser}`;
+    const storedBooks: Book[] = JSON.parse(localStorage.getItem(bookshelfKey) || '[]');
+    setRecentBooks(storedBooks.slice(-4).reverse());
+
+  }, [currentUser]);
+
+  const handlePrevMonth = () => {
+    setDisplayDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setDisplayDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 1));
+  };
 
   const renderCalendar = () => {
-    // ... (calendar rendering logic is unchanged)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const year = displayDate.getFullYear();
+    const month = displayDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
 
@@ -56,12 +54,25 @@ function Home() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const isAttended = attendance.includes(dateStr);
-      const isToday = new Date().toISOString().split('T')[0] === dateStr;
-      const dayClasses = [ styles.calendarDay, isToday ? styles.today : '', isAttended ? styles.attended : '' ].join(' ');
-      calendarDays.push(<div key={day} className={dayClasses}>{day}</div>);
+      const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+      
+      const dayClasses = [ styles.calendarDay, isToday ? styles.today : '' ].join(' ');
+      
+      calendarDays.push(
+        <div key={day} className={dayClasses}>
+          {day}
+          {isAttended && <span className={styles.attendanceMarker}>📚</span>}
+        </div>
+      );
     }
     return calendarDays;
   };
+  
+  const getAttendanceForMonth = () => {
+    const year = displayDate.getFullYear();
+    const month = displayDate.getMonth() + 1;
+    return attendance.filter(date => date.startsWith(`${year}-${String(month).padStart(2, '0')}`)).length;
+  }
 
   return (
     <div className={styles.container}>
@@ -69,13 +80,13 @@ function Home() {
       <section className={styles.topSection}>
         <div className={styles.profile}>
           <img
-            src={PROFILE_IMAGE_BY_MODE[userMode]}
-            alt={`${userMode} profile`}
+            src="/profile.png"
+            alt="profile"
             className={styles.profileImage}
             onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/80'; }}
           />
           <div>
-            <h1>{userName}님, 환영합니다!</h1>
+            <h1>{currentUser || '사용자'}님, 환영합니다!</h1>
             <p>오늘도 책으로 마음을 정리해볼까요?</p>
           </div>
         </div>
@@ -91,7 +102,12 @@ function Home() {
       {/* Main Content */}
       <main className={styles.mainContent}>
         <section className={styles.calendarCard}>
-          <h2>이번 달 출석률: {Math.round((attendance.length / 30) * 100)}%</h2>
+          <div className={styles.calendarNav}>
+            <button onClick={handlePrevMonth} className={styles.navButton}><FaChevronLeft /></button>
+            <h2 className={styles.calendarTitle}>{`${displayDate.getFullYear()}년 ${displayDate.getMonth() + 1}월`}</h2>
+            <button onClick={handleNextMonth} className={styles.navButton}><FaChevronRight /></button>
+          </div>
+          <h3>출석률: {Math.round((getAttendanceForMonth() / new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0).getDate()) * 100)}%</h3>
           <div className={styles.calendarGrid}>
             <div className={styles.calendarHeader}>일</div> <div className={styles.calendarHeader}>월</div> <div className={styles.calendarHeader}>화</div> <div className={styles.calendarHeader}>수</div> <div className={styles.calendarHeader}>목</div> <div className={styles.calendarHeader}>금</div> <div className={styles.calendarHeader}>토</div>
             {renderCalendar()}
@@ -99,16 +115,20 @@ function Home() {
         </section>
         <section className={styles.libraryCard}>
           <div className={styles.libraryHeader}>
-            <h2>서재</h2>
+            <h2>내 서재</h2>
             <span onClick={() => navigate('/bookshelf')}>더 보기</span>
           </div>
           <div className={styles.bookList}>
-            {RECENT_BOOKS.map(book => (
-              <div key={book.id} className={styles.bookItem}>
-                <img src={book.cover} alt={book.title} />
-                <p>{book.title}</p>
-              </div>
-            ))}
+            {recentBooks.length > 0 ? (
+              recentBooks.map(book => (
+                <div key={book.id} className={styles.bookItem}>
+                  <div className={styles.bookIcon}>📚</div>
+                  <p>{book.title}</p>
+                </div>
+              ))
+            ) : (
+              <p className={styles.noBooksMessage}>아직 서재에 책이 없습니다.</p>
+            )}
           </div>
         </section>
       </main>
