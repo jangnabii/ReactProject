@@ -24,3 +24,12 @@ export interface BookLog {
   recommendedDate: string;
   lastUpdated: string;
 }
+
+// Represents the book object structure used in the chat mock data
+export interface ChatBook {
+  bookId: string;
+  title: string;
+  author: string;
+  coverImageUrl: string;
+  addedAt: string;
+}

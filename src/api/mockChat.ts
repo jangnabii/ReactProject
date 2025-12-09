@@ -1,7 +1,7 @@
 // src/api/mockChat.ts
-import { Book } from '../types';
+import type { ChatBook } from '../types';
 
-export const MOCK_BOOKS_FOR_CHAT: Book[] = [
+export const MOCK_BOOKS_FOR_CHAT: ChatBook[] = [
   {
     bookId: '101',
     title: '마음의 안정',
